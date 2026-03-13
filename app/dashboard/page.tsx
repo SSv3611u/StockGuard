@@ -8,6 +8,7 @@ import ActionButtons from '@/components/dashboard/ActionButtons'
 import DashboardWidgets from '@/components/dashboard/DashboardWidgets'
 import RestockAlerts from '@/components/dashboard/RestockAlerts'
 import LogoutButton from '@/components/dashboard/LogoutButton'
+import ExpiryChecker from '@/components/dashboard/ExpiryChecker'
 
 const SHOP_ID = process.env.NEXT_PUBLIC_SHOP_ID || ''
 
@@ -148,6 +149,7 @@ export default async function DashboardPage() {
 
   return (
     <main className="p-6 md:p-8 w-full max-w-7xl mx-auto flex-1">
+      <ExpiryChecker />
       <header className="mb-6 flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-semibold text-gray-900">StockGuard</h1>
