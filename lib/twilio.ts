@@ -16,3 +16,18 @@ export async function sendWhatsApp(to: string, message: string): Promise<void> {
     body: message,
   });
 }
+
+// ─── SMS (for OTP delivery) ───────────────────────
+const SMS_FROM = process.env.TWILIO_SMS_FROM || process.env.TWILIO_WHATSAPP_FROM || "";
+
+export async function sendSMS(to: string, message: string): Promise<void> {
+  // Strip "whatsapp:" prefix if present, ensure "+" prefix
+  let phone = to.replace("whatsapp:", "").trim();
+  if (!phone.startsWith("+")) phone = `+${phone}`;
+
+  await client.messages.create({
+    from: SMS_FROM.replace("whatsapp:", ""),
+    to: phone,
+    body: message,
+  });
+}
