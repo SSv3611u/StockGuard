@@ -17,7 +17,7 @@ export default function InvoiceUpload({ shopId }: Props) {
   const [loading, setLoading] = useState(false)
   const [saved, setSaved] = useState(false)
 
-  const handleFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFile = async () => {
     setLoading(true)
     setTimeout(() => {
         setItems([

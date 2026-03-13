@@ -20,7 +20,7 @@ export default function BarcodeScanner({ shopId }: Props) {
 
     reader.decodeFromVideoDevice(deviceId, videoRef.current!, async (result) => {
       if (!result) return
-      reader.reset()
+      ;(reader as any).reset()
       setScanning(false)
       const code = result.getText()
       const res = await fetch(`/api/barcode?code=${code}`)
@@ -30,7 +30,7 @@ export default function BarcodeScanner({ shopId }: Props) {
   }
 
   const stopScan = () => {
-    readerRef.current?.reset()
+    (readerRef.current as any)?.reset()
     setScanning(false)
   }
 

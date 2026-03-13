@@ -1,6 +1,6 @@
 export function shouldBlockReorder(
   batches: Array<{
-    expiryDate: Date;
+    expiryDate: Date | string;
     quantity: number;
     purchasePrice: number | null;
   }>,
@@ -8,16 +8,19 @@ export function shouldBlockReorder(
   const today = new Date();
   const cutoff = new Date(today.getTime() + 30 * 24 * 60 * 60 * 1000);
 
-  const atRisk = batches.filter(
-    (b) => b.expiryDate > today && b.expiryDate <= cutoff && b.quantity > 0,
-  );
+  const atRisk = batches.filter((b) => {
+    const exp = new Date(b.expiryDate);
+    return exp > today && exp <= cutoff && b.quantity > 0;
+  });
+
   if (atRisk.length === 0) return { block: false };
 
   const soonest = atRisk.reduce((min, b) =>
-    b.expiryDate < min.expiryDate ? b : min,
+    new Date(b.expiryDate) < new Date(min.expiryDate) ? b : min,
   );
   const daysLeft = Math.ceil(
-    (soonest.expiryDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24),
+    (new Date(soonest.expiryDate).getTime() - today.getTime()) /
+      (1000 * 60 * 60 * 24),
   );
   const qty = atRisk.reduce((s, b) => s + b.quantity, 0);
   const value = Math.round(

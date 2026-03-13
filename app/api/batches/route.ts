@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { supabase } from "@/lib/supabase";
 import { shouldBlockReorder } from "@/lib/reorderCheck";
 import { z } from "zod";
 
@@ -8,17 +8,27 @@ export async function GET(req: NextRequest) {
   if (!shopId)
     return NextResponse.json({ error: "shopId required" }, { status: 400 });
 
-  const batches = await prisma.batch.findMany({
-    where: { product: { shopId } },
-    include: { product: true, distributor: true },
-    orderBy: { expiryDate: "asc" },
-  });
+  // Get product IDs for this shop first
+  const { data: products } = await supabase
+    .from("Product")
+    .select("id")
+    .eq("shopId", shopId);
+
+  const productIds = (products || []).map((p: any) => p.id);
+  if (productIds.length === 0) return NextResponse.json([]);
+
+  const { data: batches } = await supabase
+    .from("Batch")
+    .select("*, product:Product(*), distributor:Distributor(*)")
+    .in("productId", productIds)
+    .order("expiryDate", { ascending: true });
 
   const today = new Date();
-  const result = batches.map((b) => ({
+  const safeBatches = batches || [];
+  const result = safeBatches.map((b: any) => ({
     ...b,
     daysUntilExpiry: Math.ceil(
-      (b.expiryDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24),
+      (new Date(b.expiryDate).getTime() - today.getTime()) / (1000 * 60 * 60 * 24),
     ),
   }));
 
@@ -40,45 +50,65 @@ export async function POST(req: NextRequest) {
     const body = BatchSchema.parse(await req.json());
 
     // Upsert product
-    let product = await prisma.product.findFirst({
-      where: { shopId: body.shopId, name: body.productName },
-    });
-    if (!product)
-      product = await prisma.product.create({
-        data: { shopId: body.shopId, name: body.productName },
-      });
+    let { data: products } = await supabase
+      .from("Product")
+      .select("*")
+      .eq("shopId", body.shopId)
+      .eq("name", body.productName);
+
+    let product = products?.[0];
+    if (!product) {
+      const { data: newProd } = await supabase
+        .from("Product")
+        .insert({ shopId: body.shopId, name: body.productName })
+        .select()
+        .single();
+      product = newProd;
+    }
 
     // Upsert distributor
     let distributorId: string | undefined;
     if (body.distributorName) {
-      let dist = await prisma.distributor.findFirst({
-        where: { shopId: body.shopId, name: body.distributorName },
-      });
-      if (!dist)
-        dist = await prisma.distributor.create({
-          data: { shopId: body.shopId, name: body.distributorName },
-        });
-      distributorId = dist.id;
+      let { data: dists } = await supabase
+        .from("Distributor")
+        .select("*")
+        .eq("shopId", body.shopId)
+        .eq("name", body.distributorName);
+
+      let dist = dists?.[0];
+      if (!dist) {
+        const { data: newDist } = await supabase
+          .from("Distributor")
+          .insert({ shopId: body.shopId, name: body.distributorName })
+          .select()
+          .single();
+        dist = newDist;
+      }
+      distributorId = dist?.id;
     }
 
     // Create batch
-    const batch = await prisma.batch.create({
-      data: {
+    const { data: batch } = await supabase
+      .from("Batch")
+      .insert({
         productId: product.id,
         distributorId: distributorId ?? null,
         batchNumber: body.batchNumber ?? null,
-        expiryDate: new Date(body.expiryDate),
+        expiryDate: new Date(body.expiryDate).toISOString(),
         quantity: body.quantity,
         purchasePrice: body.purchasePrice ?? null,
-      },
-    });
+      })
+      .select()
+      .single();
 
     // Reorder check
-    const existingBatches = await prisma.batch.findMany({
-      where: { productId: product.id },
-    });
+    const { data: existingBatches } = await supabase
+      .from("Batch")
+      .select("*")
+      .eq("productId", product.id);
+
     const reorderWarning = shouldBlockReorder(
-      existingBatches.map((b) => ({
+      (existingBatches || []).map((b: any) => ({
         expiryDate: b.expiryDate,
         quantity: b.quantity,
         purchasePrice: b.purchasePrice,
@@ -89,9 +119,9 @@ export async function POST(req: NextRequest) {
       batch,
       reorderWarning: reorderWarning.block ? reorderWarning : null,
     });
-  } catch (err) {
+  } catch (err: any) {
     if (err instanceof z.ZodError)
-      return NextResponse.json({ error: err.errors }, { status: 400 });
+      return NextResponse.json({ error: err.issues }, { status: 400 });
     console.error(err);
     return NextResponse.json({ error: "Internal error" }, { status: 500 });
   }
