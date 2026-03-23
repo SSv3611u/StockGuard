@@ -47,6 +47,7 @@ export type TranslationKeys = {
   distributors: string
   alerts: string
   settings: string
+  profile: string
   signOut: string
 
   // Shop
@@ -169,6 +170,7 @@ export const translations: Record<LanguageCode, TranslationKeys> = {
     distributors: 'Distributors',
     alerts: 'Alerts',
     settings: 'Settings',
+    profile: 'Profile',
     signOut: 'Sign Out',
     shopInfo: 'Ram Medical Store',
     whatsappActive: 'WhatsApp alerts active ✅',
@@ -266,6 +268,7 @@ export const translations: Record<LanguageCode, TranslationKeys> = {
     distributors: 'పంపిణీదారులు',
     alerts: 'అలర్ట్‌లు',
     settings: 'సెట్టింగ్‌లు',
+    profile: 'ప్రొఫైల్',
     signOut: 'సైన్ అవుట్',
     shopInfo: 'రామ్ మెడికల్ స్టోర్',
     whatsappActive: 'WhatsApp అలర్ట్‌లు చురుకుగా ✅',
@@ -363,6 +366,7 @@ export const translations: Record<LanguageCode, TranslationKeys> = {
     distributors: 'वितरक',
     alerts: 'अलर्ट',
     settings: 'सेटिंग्स',
+    profile: 'प्रोफ़ाइल',
     signOut: 'लॉग आउट',
     shopInfo: 'राम मेडिकल स्टोर',
     whatsappActive: 'WhatsApp अलर्ट चालू ✅',
@@ -460,6 +464,7 @@ export const translations: Record<LanguageCode, TranslationKeys> = {
     distributors: 'वितरक',
     alerts: 'अलर्ट्स',
     settings: 'सेटिंग्ज',
+    profile: 'प्रोफाइल',
     signOut: 'साइन आउट',
     shopInfo: 'राम मेडिकल स्टोर',
     whatsappActive: 'WhatsApp अलर्ट्स चालू ✅',
@@ -557,6 +562,7 @@ export const translations: Record<LanguageCode, TranslationKeys> = {
     distributors: 'விநியோகஸ்தர்கள்',
     alerts: 'எச்சரிக்கைகள்',
     settings: 'அமைப்புகள்',
+    profile: 'சுயவிவரம்',
     signOut: 'வெளியேறு',
     shopInfo: 'ராம் மருத்துவ கடை',
     whatsappActive: 'WhatsApp எச்சரிக்கைகள் செயலில் ✅',
@@ -654,6 +660,7 @@ export const translations: Record<LanguageCode, TranslationKeys> = {
     distributors: 'ವಿತರಕರು',
     alerts: 'ಎಚ್ಚರಿಕೆಗಳು',
     settings: 'ಸೆಟ್ಟಿಂಗ್‌ಗಳು',
+    profile: 'ಪ್ರೊಫೈಲ್',
     signOut: 'ಸೈನ್ ಔಟ್',
     shopInfo: 'ರಾಮ್ ಮೆಡಿಕಲ್ ಸ್ಟೋರ್',
     whatsappActive: 'WhatsApp ಎಚ್ಚರಿಕೆಗಳು ಸಕ್ರಿಯ ✅',

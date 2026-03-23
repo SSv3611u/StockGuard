@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { LayoutDashboard, Package, ShoppingCart, Users, Settings, Bell, LogOut, Loader2, Menu, X } from 'lucide-react'
+import { LayoutDashboard, Package, ShoppingCart, Users, Settings, Bell, LogOut, Loader2, Menu, X, User } from 'lucide-react'
 import { usePathname } from 'next/navigation'
 import { useState } from 'react'
 import { createSupabaseBrowserClient } from '@/lib/supabase-browser'
@@ -20,6 +20,7 @@ export default function Sidebar() {
     { name: t.products, href: '/dashboard/products', icon: Package },
     { name: t.sales, href: '/dashboard/sales', icon: ShoppingCart },
     { name: t.distributors, href: '/dashboard/distributors', icon: Users },
+    { name: t.profile, href: '/dashboard/profile', icon: User },
     { name: t.alerts, href: '/dashboard/settings', icon: Bell },
     { name: t.settings, href: '/dashboard/settings', icon: Settings },
   ]

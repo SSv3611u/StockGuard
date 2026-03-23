@@ -54,7 +54,7 @@ export default function BatchTable({ batches, shopId }: Props) {
     }
   }
 
-  const filtered = batches.filter(b => 
+  const filtered = batches.filter(b =>
     b.product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     (b.batchNumber && b.batchNumber.toLowerCase().includes(searchTerm.toLowerCase()))
   )

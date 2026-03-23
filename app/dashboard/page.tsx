@@ -11,36 +11,86 @@ import ExpiryChecker from '@/components/dashboard/ExpiryChecker'
 import SendSummaryButton from '@/components/dashboard/SendSummaryButton'
 import DashboardHeader from '@/components/dashboard/DashboardHeader'
 import SectionLabel from '@/components/dashboard/SectionLabel'
+import { getSession } from '@/lib/auth'
+import { createServerClient } from '@supabase/ssr'
+import { cookies } from 'next/headers'
 
-const SHOP_ID = process.env.NEXT_PUBLIC_SHOP_ID || ''
+const DEFAULT_SHOP_ID = process.env.NEXT_PUBLIC_SHOP_ID || ''
+
+async function resolveShopIdForDashboard() {
+  const session = await getSession()
+  if (session?.shopId) return session.shopId
+
+  const cookieStore = await cookies()
+  const supabaseServer = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() { return cookieStore.getAll() },
+        setAll() { },
+      },
+    }
+  )
+
+  const { data: authData } = await supabaseServer.auth.getUser()
+  const user = authData.user
+  const email = user?.email?.toLowerCase().trim()
+  const meta = (user?.user_metadata || {}) as { shop_id?: string; shop_name?: string; shopName?: string }
+
+  if (meta.shop_id) return meta.shop_id
+
+  const metaShopName = meta.shop_name || meta.shopName
+  if (metaShopName) {
+    const { data: shopByName } = await supabaseServer
+      .from('Shop')
+      .select('id')
+      .eq('name', metaShopName)
+      .maybeSingle()
+    if (shopByName?.id) return shopByName.id
+  }
+
+  if (email) {
+    const { data: shopkeeper } = await supabaseServer
+      .from('Shopkeeper')
+      .select('shopId')
+      .eq('email', email)
+      .maybeSingle()
+    if (shopkeeper?.shopId) return shopkeeper.shopId
+  }
+
+  return DEFAULT_SHOP_ID
+}
 
 export const dynamic = 'force-dynamic'
 
 export default async function DashboardPage() {
+  const resolvedShopId = await resolveShopIdForDashboard()
+
   const { data: products } = await supabase
     .from('Product')
     .select('id, name')
-    .eq('shopId', SHOP_ID)
+    .eq('shopId', resolvedShopId)
 
   const productIds = (products || []).map((p: any) => p.id)
 
   const batchesPromise = productIds.length > 0
     ? supabase
-        .from('Batch')
-        .select('*, product:Product(*), distributor:Distributor(*)')
-        .in('productId', productIds)
-        .order('expiryDate', { ascending: true })
+      .from('Batch')
+      .select('*, product:Product(*), distributor:Distributor(*)')
+      .in('productId', productIds)
+      .order('expiryDate', { ascending: true })
     : Promise.resolve({ data: [], error: null })
 
   const distributorsPromise = supabase
     .from('Distributor')
     .select('*, returnLogs:ReturnLog(*)')
-    .eq('shopId', SHOP_ID)
+    .eq('shopId', resolvedShopId)
 
   const salesPromise = supabase
     .from('Sales')
     .select('*')
-    .eq('shopId', SHOP_ID)
+    .eq('shopId', resolvedShopId)
 
   const [batchesRes, distributorsRes, salesRes] = await Promise.all([
     batchesPromise,
@@ -55,9 +105,9 @@ export default async function DashboardPage() {
   const batchIds = batches.map((b: any) => b.id)
   const returnLogsRes = batchIds.length > 0
     ? await supabase
-        .from('ReturnLog')
-        .select('*, batch:Batch(*)')
-        .in('batchId', batchIds)
+      .from('ReturnLog')
+      .select('*, batch:Batch(*)')
+      .in('batchId', batchIds)
     : { data: [] }
 
   const returnLogs = returnLogsRes.data || []
@@ -72,7 +122,7 @@ export default async function DashboardPage() {
 
   const todayStart = new Date()
   todayStart.setHours(0, 0, 0, 0)
-  
+
   const sevenDaysAgo = new Date()
   sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7)
   sevenDaysAgo.setHours(0, 0, 0, 0)
@@ -139,7 +189,7 @@ export default async function DashboardPage() {
   return (
     <main className="p-4 md:p-6 lg:p-8 w-full max-w-6xl mx-auto flex-1">
       <ExpiryChecker />
-      
+
       {/* Translated Header */}
       <DashboardHeader />
 
@@ -152,7 +202,7 @@ export default async function DashboardPage() {
       {/* Quick Actions */}
       <section className="mb-6">
         <SectionLabel sectionKey="quickActions" />
-        <ActionButtons shopId={SHOP_ID} />
+        <ActionButtons shopId={resolvedShopId} />
       </section>
 
       {/* WhatsApp Summary */}
@@ -178,12 +228,12 @@ export default async function DashboardPage() {
 
       {/* Invoice Upload */}
       <section className="mb-6">
-        <InvoiceUpload shopId={SHOP_ID} />
+        <InvoiceUpload shopId={resolvedShopId} />
       </section>
 
       {/* Batch Table */}
       <section className="mb-6">
-        <BatchTable batches={batchesWithDays} shopId={SHOP_ID} />
+        <BatchTable batches={batchesWithDays} shopId={resolvedShopId} />
       </section>
 
       {/* Distributors */}

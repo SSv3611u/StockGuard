@@ -48,11 +48,14 @@ export default function SignupPage() {
     try {
       const supabase = createSupabaseBrowserClient()
 
+      // Step 1: Sign up with Supabase Auth
+      // The DB trigger (handle_new_user) will auto-create a row in public.profiles
       const { data, error: signUpError } = await supabase.auth.signUp({
         email: form.email.trim(),
         password: form.password,
         options: {
           data: {
+            full_name: form.shopName.trim(),
             shop_name: form.shopName.trim(),
             phone_number: form.phoneNumber.trim(),
           },
@@ -64,6 +67,7 @@ export default function SignupPage() {
       }
 
       if (data.user) {
+        // Step 2: Create Shop record (for inventory system)
         const { error: shopError } = await supabase
           .from('Shop')
           .insert({
@@ -74,6 +78,9 @@ export default function SignupPage() {
         if (shopError) {
           console.warn('Shop creation warning:', shopError.message)
         }
+
+        // Note: Profile row is auto-created by the DB trigger.
+        // No manual profile insert needed.
       }
 
       setSuccess(true)
